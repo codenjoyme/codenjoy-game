@@ -31,7 +31,7 @@
 /icancode/**
 /snakebattle/**
 /lemonade/**
-/engine/src/**
+/engine/**
 /engine/target/**
 /engine/.idea/**
 /engine/*.iml
