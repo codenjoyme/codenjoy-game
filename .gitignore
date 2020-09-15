@@ -3,6 +3,7 @@
 /bomberman/**
 /chess/**
 /collapse/**
+/excitebike/**
 /hex/**
 /kata/**
 /loderunner/**
@@ -43,6 +44,7 @@
 /sample-text/.idea/**
 /sample-text/libs/**
 /sample-text/*.iml
+/local-ws-game-server-jar.xml
 /**/webapp/resources/user/*.zip
 /*.bat
 /*.iml
