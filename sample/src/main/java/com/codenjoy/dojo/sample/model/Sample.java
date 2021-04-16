@@ -28,6 +28,7 @@ import com.codenjoy.dojo.sample.model.items.Gold;
 import com.codenjoy.dojo.sample.model.items.Wall;
 import com.codenjoy.dojo.sample.model.level.Level;
 import com.codenjoy.dojo.sample.services.Events;
+import com.codenjoy.dojo.sample.services.GameSettings;
 import com.codenjoy.dojo.services.BoardUtils;
 import com.codenjoy.dojo.services.Dice;
 import com.codenjoy.dojo.services.Point;
@@ -36,7 +37,10 @@ import com.codenjoy.dojo.services.printer.BoardReader;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
+import static java.util.function.Predicate.*;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -55,11 +59,14 @@ public class Sample implements Field {
     private final int size;
     private Dice dice;
 
-    public Sample(Level level, Dice dice) {
+    private GameSettings settings;
+
+    public Sample(Level level, Dice dice, GameSettings settings) {
         this.dice = dice;
         walls = level.walls();
         gold = level.gold();
         size = level.size();
+        this.settings = settings;
         players = new LinkedList<>();
         bombs = new LinkedList<>();
     }
@@ -78,8 +85,10 @@ public class Sample implements Field {
                 gold.remove(hero);
                 player.event(Events.WIN);
 
-                Point pos = getFreeRandom();
-                gold.add(new Gold(pos));
+                Optional<Point> pos = freeRandom();
+                if (pos.isPresent()) {
+                    gold.add(new Gold(pos.get()));
+                }
             }
         }
 
@@ -110,8 +119,8 @@ public class Sample implements Field {
     }
 
     @Override
-    public Point getFreeRandom() {
-        return BoardUtils.getFreeRandom(size, dice, pt -> isFree(pt));
+    public Optional<Point> freeRandom() {
+        return BoardUtils.freeRandom(size, dice, pt -> isFree(pt));
     }
 
     @Override
@@ -146,6 +155,7 @@ public class Sample implements Field {
     public List<Hero> getHeroes() {
         return players.stream()
                 .map(Player::getHero)
+                .filter(not(Objects::isNull))
                 .collect(toList());
     }
 
@@ -162,6 +172,11 @@ public class Sample implements Field {
         players.remove(player);
     }
 
+    @Override
+    public GameSettings settings() {
+        return settings;
+    }
+
     public List<Wall> getWalls() {
         return walls;
     }
@@ -172,7 +187,7 @@ public class Sample implements Field {
 
     @Override
     public BoardReader reader() {
-        return new BoardReader() {
+        return new BoardReader<Player>() {
             private int size = Sample.this.size;
 
             @Override
@@ -181,7 +196,7 @@ public class Sample implements Field {
             }
 
             @Override
-            public Iterable<? extends Point> elements() {
+            public Iterable<? extends Point> elements(Player player) {
                 return new LinkedList<Point>(){{
                     addAll(Sample.this.getWalls());
                     addAll(Sample.this.getHeroes());

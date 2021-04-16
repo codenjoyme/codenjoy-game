@@ -87,6 +87,8 @@
         <module>excitebike</module>
         <module>selfdefense</module>
         <module>japanese</module>
+        <module>vacuum</module>
+        <module>xonix</module>
     </modules>
 
     <profiles>
@@ -261,6 +263,7 @@
                         </execution>
                     </executions>
                     <configuration>
+                        <revisionOnScmFailure>no.scm.config.in.pom</revisionOnScmFailure>
                         <doCheck>false</doCheck>
                         <doUpdate>false</doUpdate>
                         <providerImplementations>

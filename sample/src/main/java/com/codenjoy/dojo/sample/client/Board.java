@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.codenjoy.dojo.sample.model.Elements.*;
 import static com.codenjoy.dojo.services.PointImpl.pt;
 
 /**
@@ -45,20 +46,25 @@ public class Board extends AbstractBoard<Elements> {
         return Elements.valueOf(ch);
     }
 
+    @Override
+    protected int inversionY(int y) {
+        return size - 1 - y;
+    }
+
     public boolean isBarrierAt(int x, int y) {
-        return isAt(x, y, Elements.WALL, Elements.OTHER_HERO);
+        return isAt(x, y, WALL, OTHER_HERO);
     }
 
     public Point getMe() {
-        return get(Elements.DEAD_HERO,
-                Elements.HERO).get(0);
+        return get(DEAD_HERO,
+                HERO).get(0);
     }
 
     public boolean isGameOver() {
-        return !get(Elements.DEAD_HERO).isEmpty();
+        return !get(DEAD_HERO).isEmpty();
     }
 
     public boolean isBombAt(int x, int y) {
-        return isAt(x, y, Elements.BOMB);
+        return isAt(x, y, BOMB);
     }
 }

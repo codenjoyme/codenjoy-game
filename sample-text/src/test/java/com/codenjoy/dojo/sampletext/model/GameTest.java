@@ -23,29 +23,33 @@ package com.codenjoy.dojo.sampletext.model;
  */
 
 
+import com.codenjoy.dojo.sampletext.services.GameSettings;
 import com.codenjoy.dojo.services.Dice;
 import com.codenjoy.dojo.services.EventListener;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.stubbing.OngoingStubbing;
 
+import static com.codenjoy.dojo.sampletext.services.GameSettings.Keys.QUESTIONS;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class SampleTest {
+public class GameTest {
 
     private SampleText game;
     private Hero hero;
     private Dice dice;
     private EventListener listener;
     private Player player;
-    private LevelImpl level;
+    private GameSettings settings;
 
     @Before
     public void setup() {
         dice = mock(Dice.class);
+        settings = new GameSettings();
     }
 
     private void dice(int...ints) {
@@ -56,17 +60,18 @@ public class SampleTest {
     }
 
     private void givenQA(String... questionAnswers) {
-        level = new LevelImpl(questionAnswers);
-        game = new SampleText(level, dice);
+        settings.string(QUESTIONS,
+                StringUtils.joinWith("\n", questionAnswers));
+        game = new SampleText(settings.level(), dice, settings);
         listener = mock(EventListener.class);
-        player = new Player(listener);
+        player = new Player(listener, settings);
         game.newGame(player);
         hero = player.hero;
         hero.init(game);
     }
 
     private void thenHistory(String expected) {
-        assertEquals(expected, player.getHistory().toString().replace('\"', '\''));
+        assertEquals(expected, player.history().toString().replace('\"', '\''));
     }
 
     @Test
