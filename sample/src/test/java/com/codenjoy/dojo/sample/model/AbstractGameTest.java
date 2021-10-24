@@ -23,65 +23,155 @@ package com.codenjoy.dojo.sample.model;
  */
 
 
-import com.codenjoy.dojo.sample.model.level.Level;
+import com.codenjoy.dojo.games.sample.Element;
+import com.codenjoy.dojo.sample.TestGameSettings;
 import com.codenjoy.dojo.sample.services.Events;
 import com.codenjoy.dojo.sample.services.GameSettings;
 import com.codenjoy.dojo.services.Dice;
 import com.codenjoy.dojo.services.EventListener;
+import com.codenjoy.dojo.services.Game;
+import com.codenjoy.dojo.services.multiplayer.LevelProgress;
+import com.codenjoy.dojo.services.multiplayer.Single;
 import com.codenjoy.dojo.services.printer.PrinterFactory;
 import com.codenjoy.dojo.services.printer.PrinterFactoryImpl;
-import com.codenjoy.dojo.utils.TestUtils;
+import com.codenjoy.dojo.utils.events.EventsListenersAssert;
+import com.codenjoy.dojo.utils.smart.SmartAssert;
+import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
 import org.mockito.stubbing.OngoingStubbing;
 
-import static com.codenjoy.dojo.sample.services.GameSettings.Keys.LEVEL_MAP;
-import static org.junit.Assert.*;
+import java.util.LinkedList;
+import java.util.List;
+
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public abstract class AbstractGameTest {
 
-    protected Sample game;
-    protected Hero hero;
+    private List<EventListener> listeners;
+    private List<Game> games;
+    private List<Player> players;
+
     private Dice dice;
-    protected EventListener listener;
-    protected Player player;
-    private PrinterFactory printer;
+    private PrinterFactory<Element, Player> printer;
+    private Sample field;
     private GameSettings settings;
+    private EventsListenersAssert events;
 
     @Before
     public void setup() {
+        listeners = new LinkedList<>();
+        players = new LinkedList<>();
+        games = new LinkedList<>();
+
         dice = mock(Dice.class);
-        settings = new GameSettings();
-        printer = new PrinterFactoryImpl();
+        settings = new TestGameSettings();
+        setupSettings();
+        printer = new PrinterFactoryImpl<>();
+        events = new EventsListenersAssert(() -> listeners, Events.class);
     }
 
-    public void dice(int...ints) {
+    @After
+    public void after() {
+        verifyAllEvents("");
+        SmartAssert.checkResult(getClass());
+    }
+
+    public void dice(int... ints) {
         OngoingStubbing<Integer> when = when(dice.next(anyInt()));
         for (int i : ints) {
             when = when.thenReturn(i);
         }
     }
 
-    public void givenFl(String board) {
-        settings.string(LEVEL_MAP, board);
+    public void givenFl(String... maps) {
+        int levelNumber = LevelProgress.levelsStartsFrom1;
+        settings.setLevelMaps(levelNumber, maps);
+        Level level = settings.level(levelNumber, dice);
 
-        Level level = settings.level();
-        Hero hero = level.heroes().get(0);
+        field = new Sample(dice, level, settings);
+        level.heroes().forEach(this::givenPlayer);
 
-        game = new Sample(level, dice, settings);
-        listener = mock(EventListener.class);
-        player = new Player(listener, settings);
-        dice(hero.getX(), hero.getY()); // позиция рассчитывается рендомно из dice
-        game.newGame(player);
-        player.hero = hero;
-        hero.init(game);
-        this.hero = game.getHeroes().get(0);
+        // other field preparation stuff
     }
 
-    public void assertE(String expected) {
-        assertEquals(TestUtils.injectN(expected),
-                printer.getPrinter(game.reader(), player).print());
+    protected void givenPlayer(Hero hero) {
+        EventListener listener = mock(EventListener.class);
+        listeners.add(listener);
+
+        Player player = new Player(listener, settings);
+        players.add(player);
+
+        Game game = new Single(player, printer);
+        games.add(game);
+
+        dice(hero.getX(), hero.getY());
+        game.on(field);
+        game.newGame();
+    }
+
+    public void assertEquals(Object expected, Object actual) {
+        SmartAssert.assertEquals(expected, actual);
+    }
+
+    protected void setupSettings() {
+        // do something with settings
+    }
+
+    public void tick() {
+        field.tick();
+    }
+
+    // getters & asserts
+
+    public void verifyAllEvents(String expected) {
+        assertEquals(expected, events().getEvents());
+    }
+
+    public GameSettings settings() {
+        return settings;
+    }
+
+    public Sample field() {
+        return field;
+    }
+
+    public EventsListenersAssert events() {
+        return events;
+    }
+
+    public void assertF(String expected, int index) {
+        assertEquals(expected, game(index).getBoardAsString());
+    }
+
+    public Game game(int index) {
+        return games.get(index);
+    }
+
+    public Player player(int index) {
+        return players.get(index);
+    }
+
+    public Hero hero(int index) {
+        return (Hero) game(index).getPlayer().getHero();
+    }
+
+    // getters, if only one player
+
+    public void assertF(String expected) {
+        assertF(expected, 0);
+    }
+
+    public Game game() {
+        return game(0);
+    }
+
+    public Player player() {
+        return player(0);
+    }
+
+    public Hero hero() {
+        return hero(0);
     }
 }

@@ -161,10 +161,12 @@ All names should be lowercase
 ```
 public class DryRunGame {
     public static void main(String[] args) {
-        LocalGameRunner.run(new GameRunner(),
-                new KeyboardSolver(),
-                // new AISolver(new RandomDice()),
-                new Board());
+        new LocalGameRunner()
+                .with(new GameRunner())
+                .add(new KeyboardSolver(),
+                        // new AISolver(new RandomDice()),
+                        new Board())
+                .run();
     }
 }
 ```
@@ -259,8 +261,8 @@ it will fully communicate with the ws client, as if the
 server were up. This is useful during game development.
 
 To do this, the game must be able to implement it. 
-For example Bomberman game contains a 
-[startup class Main](https://github.com/codenjoyme/codenjoy/blob/master/CodingDojo/games/bomberman/src/main/java/com/codenjoy/dojo/Main.java)
+For example MollyMage game contains a 
+[startup class Main](https://github.com/codenjoyme/codenjoy/blob/master/CodingDojo/games/mollymage/src/main/java/com/codenjoy/dojo/Main.java)
 in which the game starts. If your game has the same 
 file, you can run the command:
 ```
@@ -274,11 +276,11 @@ After assembly, a file `<GAMENAME>-engine.jar` will
 appear in `target` so you can run it:
 - for windows
 ```
-java -jar -Dhost=127.0.0.1 -Dport=8080 -Dtimeout=1000 -DlogDisable=false -Dlog="output.txt" -DlogTime=true -DshowPlayers="2,3" -Drandom="random-soul-string" -DwaitFor=2 -Dsettings="{'boardSize':11, 'bombPower':7} <GAMENAME>-engine.jar"
+java -jar -Dhost=127.0.0.1 -Dport=8080 -Dtimeout=1000 -DlogDisable=false -Dlog="output.txt" -DlogTime=true -DshowPlayers="2,3" -Drandom="random-soul-string" -DwaitFor=2 -Dsettings="{'boardSize':11, 'potionPower':7} <GAMENAME>-engine.jar"
 ```
 - for linux
 ```
-java -jar --host=127.0.0.1 --port=8080 --timeout=1000 --logDisable=false --log="output.txt" --logTime=true --showPlayers="2,3" --random="random-soul-string" --waitFor=2 --settings="{'boardSize':11, 'bombPower':7} <GAMENAME>-engine.jar"
+java -jar --host=127.0.0.1 --port=8080 --timeout=1000 --logDisable=false --log="output.txt" --logTime=true --showPlayers="2,3" --random="random-soul-string" --waitFor=2 --settings="{'boardSize':11, 'potionPower':7} <GAMENAME>-engine.jar"
 ```
 Here: 
 - `<GAMENAME>` is game name that you try to build.

@@ -24,6 +24,8 @@ package com.codenjoy.dojo.sampletext.services;
 
 import com.codenjoy.dojo.sampletext.model.Level;
 import com.codenjoy.dojo.sampletext.model.LevelImpl;
+import com.codenjoy.dojo.services.incativity.InactivitySettings;
+import com.codenjoy.dojo.services.semifinal.SemifinalSettings;
 import com.codenjoy.dojo.services.settings.SettingsImpl;
 import com.codenjoy.dojo.services.settings.SettingsReader;
 
@@ -32,12 +34,15 @@ import java.util.List;
 
 import static com.codenjoy.dojo.sampletext.services.GameSettings.Keys.*;
 
-public class GameSettings extends SettingsImpl implements SettingsReader<GameSettings> {
+public class GameSettings extends SettingsImpl
+        implements SettingsReader<GameSettings>,
+                   InactivitySettings<GameSettings>,
+                   SemifinalSettings<GameSettings> {
 
     public enum Keys implements Key {
 
         WIN_SCORE("Win score"),
-        LOOSE_PENALTY("Loose penalty"),
+        LOSE_PENALTY("Lose penalty"),
         QUESTIONS("Questions");
 
         private String key;
@@ -58,8 +63,11 @@ public class GameSettings extends SettingsImpl implements SettingsReader<GameSet
     }
 
     public GameSettings() {
+        initInactivity();
+        initSemifinal();
+
         integer(WIN_SCORE, 30);
-        integer(LOOSE_PENALTY, 100);
+        integer(LOSE_PENALTY, 100);
      
         multiline(QUESTIONS,
                 "question1=answer1\n" +

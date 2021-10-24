@@ -26,150 +26,151 @@ package com.codenjoy.dojo.sample.model;
 import com.codenjoy.dojo.sample.model.items.Bomb;
 import com.codenjoy.dojo.sample.model.items.Gold;
 import com.codenjoy.dojo.sample.model.items.Wall;
-import com.codenjoy.dojo.sample.model.level.Level;
 import com.codenjoy.dojo.sample.services.Events;
 import com.codenjoy.dojo.sample.services.GameSettings;
 import com.codenjoy.dojo.services.BoardUtils;
 import com.codenjoy.dojo.services.Dice;
 import com.codenjoy.dojo.services.Point;
-import com.codenjoy.dojo.services.Tickable;
+import com.codenjoy.dojo.services.field.Accessor;
+import com.codenjoy.dojo.services.field.PointField;
 import com.codenjoy.dojo.services.printer.BoardReader;
+import com.codenjoy.dojo.services.round.RoundField;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-
-import static java.util.function.Predicate.*;
-import static java.util.stream.Collectors.toList;
+import java.util.function.Supplier;
 
 /**
  * О! Это самое сердце игры - борда, на которой все происходит.
- * Если какой-то из жителей борды вдруг захочет узнать что-то у нее, то лучше ему дать интефейс {@see Field}
- * Борда реализует интерфейс {@see Tickable} чтобы быть уведомленной о каждом тике игры. Обрати внимание на {Sample#tick()}
+ * Если какой-то из жителей борды вдруг захочет узнать что-то
+ * у нее, то лучше ему дать интерфейс {@link Field}.
+ *
+ * Борда реализует метод {@link #tickField()} чтобы быть
+ * уведомленной о каждом тике игры.
+ *
+ * Чтобы поддерживать много-раундовые матчи борда наследует
+ * {@link RoundField}. Этот малый берет на себя всю логистику
+ * связанную с ожиданием игроков между раундами, обратным отсчетом
+ * времени перед стартом раунда и т.д.
  */
-public class Sample implements Field {
+public class Sample extends RoundField<Player> implements Field {
 
-    private List<Wall> walls;
-    private List<Gold> gold;
-    private List<Bomb> bombs;
-
+    private Level level;
+    private PointField field;
     private List<Player> players;
-
-    private final int size;
     private Dice dice;
-
     private GameSettings settings;
 
-    public Sample(Level level, Dice dice, GameSettings settings) {
+    public Sample() {
+        // do nothing, for testing only
+    }
+
+    public Sample(Dice dice, Level level, GameSettings settings) {
+        super(Events.START_ROUND, Events.WIN_ROUND, Events.LOSE, settings);
+
+        this.level = level;
         this.dice = dice;
-        walls = level.walls();
-        gold = level.gold();
-        size = level.size();
         this.settings = settings;
-        players = new LinkedList<>();
-        bombs = new LinkedList<>();
+        this.field = new PointField();
+        this.players = new LinkedList<>();
+
+        clearScore();
+    }
+
+    @Override
+    public void clearScore() {
+        level.saveTo(field);
+        field.init(this);
+
+        // other clear score actions
+
+        super.clearScore();
+    }
+
+    @Override
+    public void onAdd(Player player) {
+        player.newHero(this);
+    }
+
+    @Override
+    public void onRemove(Player player) {
+        heroes().removeExact(player.getHero());
+    }
+
+    @Override
+    protected List<Player> players() {
+        return players;
+    }
+
+    @Override
+    public void cleanStuff() {
+        // clean all temporary stuff before next tick
+    }
+
+    @Override
+    protected void setNewObjects() {
+        // add new object after rewarding winner
     }
 
     /**
-     * @see Tickable#tick()
+     * Сердце поля. Каждую секунду фреймворк будет тикать этот метод.
+     * Важно помнить, что если раунд не начался - сигнал сюда не дойдет.
      */
     @Override
-    public void tick() {
+    public void tickField() {
         for (Player player : players) {
             Hero hero = player.getHero();
 
             hero.tick();
 
-            if (gold.contains(hero)) {
-                gold.remove(hero);
+            if (gold().contains(hero)) {
+                gold().removeAt(hero);
+
                 player.event(Events.WIN);
 
-                Optional<Point> pos = freeRandom();
-                if (pos.isPresent()) {
-                    gold.add(new Gold(pos.get()));
-                }
-            }
-        }
-
-        for (Player player : players) {
-            Hero hero = player.getHero();
-
-            if (!hero.isAlive()) {
-                player.event(Events.LOOSE);
+                freeRandom(null)
+                        .ifPresent(point -> field.add(new Gold(point)));
             }
         }
     }
 
     public int size() {
-        return size;
+        return field.size();
     }
 
     @Override
     public boolean isBarrier(Point pt) {
-        int x = pt.getX();
-        int y = pt.getY();
-
-        return x > size - 1
-                || x < 0
-                || y < 0
-                || y > size - 1
-                || walls.contains(pt)
-                || getHeroes().contains(pt);
+        return pt.isOutOf(size())
+                || walls().contains(pt)
+                || heroes().contains(pt);
     }
 
     @Override
-    public Optional<Point> freeRandom() {
-        return BoardUtils.freeRandom(size, dice, pt -> isFree(pt));
+    public Optional<Point> freeRandom(Player player) {
+        return BoardUtils.freeRandom(size(), dice, this::isFree);
     }
 
     @Override
     public boolean isFree(Point pt) {
-        return !(gold.contains(pt)
-                || bombs.contains(pt)
-                || walls.contains(pt)
-                || getHeroes().contains(pt));
-    }
-
-    @Override
-    public boolean isBomb(Point pt) {
-        return bombs.contains(pt);
+        return !(gold().contains(pt)
+                || bombs().contains(pt)
+                || walls().contains(pt)
+                || heroes().contains(pt));
     }
 
     @Override
     public void setBomb(Point pt) {
-        if (!bombs.contains(pt)) {
-            bombs.add(new Bomb(pt));
+        if (!bombs().contains(pt)) {
+            bombs().add(new Bomb(pt));
         }
-    }
-
-    @Override
-    public void removeBomb(Point pt) {
-        bombs.remove(pt);
-    }
-
-    public List<Gold> getGold() {
-        return gold;
-    }
-
-    public List<Hero> getHeroes() {
-        return players.stream()
-                .map(Player::getHero)
-                .filter(not(Objects::isNull))
-                .collect(toList());
-    }
-
-    @Override
-    public void newGame(Player player) {
-        if (!players.contains(player)) {
-            players.add(player);
-        }
-        player.newHero(this);
     }
 
     @Override
     public void remove(Player player) {
-        players.remove(player);
+        if (players.remove(player)) {
+            heroes().removeExact(player.getHero());
+        }
     }
 
     @Override
@@ -177,33 +178,72 @@ public class Sample implements Field {
         return settings;
     }
 
-    public List<Wall> getWalls() {
-        return walls;
+    /**
+     * @return Объект участвующий в прорисовке поля.
+     *
+     */
+    @Override
+    public BoardReader reader() {
+        /**
+         * Внимание! Порядок важен.
+         * В этом порядке будут опрашиваться состояния через метод
+         * {@link com.codenjoy.dojo.services.State#state(Object, Object...)}
+         */
+        return field.reader(
+                Hero.class,
+                Wall.class,
+                Gold.class,
+                Bomb.class);
     }
 
-    public List<Bomb> getBombs() {
-        return bombs;
+    /**
+     * Метод для быстрой инициализации текущего поля из строкового представления.
+     *
+     * Актуально для сервиса, отвечающего на вопрос - каким будет следующий тик
+     * при такой конфигурации поля.
+     *
+     * @param board Текстовое представление поля.
+     * @param creator Метод создающий объекты-игроков для этих целей.
+     * @return Список созданных игроков в новом измененном поле.
+     */
+    // TODO test me
+    @Override
+    public List<Player> load(String board, Supplier<Player> creator) {
+        Level level = new Level(board);
+        List<Player> result = new LinkedList<>();
+        level.heroes().forEach(hero -> {
+            Player player = creator.get();
+            player.setHero(hero);
+            result.add(player);
+
+        });
+        level.saveTo(field);
+        return result;
+    }
+
+    /**
+     * Дальше идут методы для получения быстрого доступа
+     * к объектам разных типов на поле.
+     */
+
+    @Override
+    public Accessor<Gold> gold() {
+        return field.of(Gold.class);
     }
 
     @Override
-    public BoardReader reader() {
-        return new BoardReader<Player>() {
-            private int size = Sample.this.size;
-
-            @Override
-            public int size() {
-                return size;
-            }
-
-            @Override
-            public Iterable<? extends Point> elements(Player player) {
-                return new LinkedList<Point>(){{
-                    addAll(Sample.this.getWalls());
-                    addAll(Sample.this.getHeroes());
-                    addAll(Sample.this.getGold());
-                    addAll(Sample.this.getBombs());
-                }};
-            }
-        };
+    public Accessor<Hero> heroes() {
+        return field.of(Hero.class);
     }
+
+    @Override
+    public Accessor<Wall> walls() {
+        return field.of(Wall.class);
+    }
+
+    @Override
+    public Accessor<Bomb> bombs() {
+        return field.of(Bomb.class);
+    }
+
 }

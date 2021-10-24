@@ -25,17 +25,18 @@ package com.codenjoy.dojo.sampletext.services;
 
 import com.codenjoy.dojo.client.ClientBoard;
 import com.codenjoy.dojo.client.Solver;
-import com.codenjoy.dojo.sampletext.client.Board;
-import com.codenjoy.dojo.sampletext.client.ai.AISolver;
+import com.codenjoy.dojo.games.sampletext.Board;
+import com.codenjoy.dojo.sampletext.services.ai.AISolver;
 import com.codenjoy.dojo.sampletext.model.Player;
 import com.codenjoy.dojo.sampletext.model.SampleText;
 import com.codenjoy.dojo.services.AbstractGameType;
 import com.codenjoy.dojo.services.EventListener;
+import com.codenjoy.dojo.services.GameType;
 import com.codenjoy.dojo.services.PlayerScores;
 import com.codenjoy.dojo.services.multiplayer.GamePlayer;
 import com.codenjoy.dojo.services.multiplayer.MultiplayerType;
 import com.codenjoy.dojo.services.printer.BoardReader;
-import com.codenjoy.dojo.services.printer.CharElements;
+import com.codenjoy.dojo.services.printer.CharElement;
 import com.codenjoy.dojo.services.printer.PrinterFactory;
 import com.codenjoy.dojo.services.settings.Parameter;
 import org.json.JSONObject;
@@ -43,7 +44,7 @@ import org.json.JSONObject;
 import static com.codenjoy.dojo.services.settings.SimpleParameter.v;
 
 /**
- * Генератор игор - реализация {@see GameType}
+ * Генератор игор - реализация {@link GameType}.
  */
 public class GameRunner extends AbstractGameType<GameSettings>{
 
@@ -73,8 +74,8 @@ public class GameRunner extends AbstractGameType<GameSettings>{
     }
 
     @Override
-    public CharElements[] getPlots() {
-        return new CharElements[0];
+    public CharElement[] getPlots() {
+        return new CharElement[0];
     }
 
     @Override
@@ -93,8 +94,8 @@ public class GameRunner extends AbstractGameType<GameSettings>{
     }
 
     @Override
-    public GamePlayer createPlayer(EventListener listener, String playerId, GameSettings settings) {
-        return new Player(listener, settings);
+    public GamePlayer createPlayer(EventListener listener, int teamId, String playerId, GameSettings settings) {
+        return new Player(listener, settings).inTeam(teamId);
     }
 
     @Override

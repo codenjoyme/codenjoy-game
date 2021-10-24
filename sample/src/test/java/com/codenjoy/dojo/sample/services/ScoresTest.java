@@ -35,12 +35,16 @@ public class ScoresTest {
     private PlayerScores scores;
     private GameSettings settings;
 
-    public void loose() {
-        scores.event(Events.LOOSE);
+    public void lose() {
+        scores.event(Events.LOSE);
     }
 
     public void win() {
         scores.event(Events.WIN);
+    }
+
+    public void winRound() {
+        scores.event(Events.WIN_ROUND);
     }
 
     @Before
@@ -58,17 +62,21 @@ public class ScoresTest {
         win();
         win();
 
-        loose();
+        lose();
+
+        winRound();
+        winRound();
 
         assertEquals(140
                 + 4 * settings.integer(WIN_SCORE)
-                - settings.integer(LOOSE_PENALTY),
+                - 1 * settings.integer(LOSE_PENALTY)
+                + 2 * settings.integer(WIN_ROUND_SCORE),
                 scores.getScore());
     }
 
     @Test
     public void shouldStillZeroAfterDead() {
-        loose();
+        lose();
 
         assertEquals(0, scores.getScore());
     }

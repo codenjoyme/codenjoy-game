@@ -23,26 +23,34 @@ package com.codenjoy.dojo.sample.model;
  */
 
 
+import com.codenjoy.dojo.sample.model.items.Bomb;
+import com.codenjoy.dojo.sample.model.items.Gold;
+import com.codenjoy.dojo.sample.model.items.Wall;
 import com.codenjoy.dojo.services.Point;
-import com.codenjoy.dojo.services.multiplayer.GameField;
+import com.codenjoy.dojo.services.field.Accessor;
+import com.codenjoy.dojo.services.round.RoundGameField;
 
 import java.util.Optional;
 
 /**
- * Так случилось что доска знает про героя, а герой про доску.
- * И чтобы герой не знал про всю доску, я ему даю вот эту часть доски.
+ * Объекты на поле хотят взаимодействовать с полем и делают они
+ * с помощью этого интерфейса.
  */
-public interface Field extends GameField<Player> {
+public interface Field extends RoundGameField<Player> {
 
     boolean isBarrier(Point pt);
 
-    Optional<Point> freeRandom();
+    Optional<Point> freeRandom(Player player);
 
     boolean isFree(Point pt);
 
-    boolean isBomb(Point pt);
-
     void setBomb(Point pt);
 
-    void removeBomb(Point pt);
+    Accessor<Gold> gold();
+
+    Accessor<Hero> heroes();
+
+    Accessor<Wall> walls();
+
+    Accessor<Bomb> bombs();
 }

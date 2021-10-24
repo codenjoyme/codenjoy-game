@@ -23,8 +23,12 @@ package com.codenjoy.dojo.sample.services;
  */
 
 
-import com.codenjoy.dojo.sample.model.level.Level;
-import com.codenjoy.dojo.sample.model.level.LevelImpl;
+import com.codenjoy.dojo.sample.model.Level;
+import com.codenjoy.dojo.services.Dice;
+import com.codenjoy.dojo.services.incativity.InactivitySettings;
+import com.codenjoy.dojo.services.level.LevelsSettings;
+import com.codenjoy.dojo.services.round.RoundSettings;
+import com.codenjoy.dojo.services.semifinal.SemifinalSettings;
 import com.codenjoy.dojo.services.settings.SettingsImpl;
 import com.codenjoy.dojo.services.settings.SettingsReader;
 
@@ -33,13 +37,18 @@ import java.util.List;
 
 import static com.codenjoy.dojo.sample.services.GameSettings.Keys.*;
 
-public final class GameSettings extends SettingsImpl implements SettingsReader<GameSettings> {
+public class GameSettings extends SettingsImpl
+        implements SettingsReader<GameSettings>,
+                   InactivitySettings<GameSettings>,
+                   RoundSettings<GameSettings>,
+                   LevelsSettings<GameSettings>,
+                   SemifinalSettings<GameSettings> {
 
     public enum Keys implements Key {
 
         WIN_SCORE("Win score"),
-        LOOSE_PENALTY("Loose penalty"),
-        LEVEL_MAP("Level map");
+        WIN_ROUND_SCORE("Win round score"),
+        LOSE_PENALTY("Lose penalty");
 
         private String key;
 
@@ -59,44 +68,19 @@ public final class GameSettings extends SettingsImpl implements SettingsReader<G
     }
 
     public GameSettings() {
+        initInactivity();
+        initRound();
+        initSemifinal();
+        initLevels();
+
         integer(WIN_SCORE, 30);
-        integer(LOOSE_PENALTY, 100);
+        integer(WIN_ROUND_SCORE, 100);
+        integer(LOSE_PENALTY, 20);
 
-        multiline(LEVEL_MAP,
-                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
-                "☼          $                 ☼\n" +
-                "☼                            ☼\n" +
-                "☼   $              $         ☼\n" +
-                "☼                       $    ☼\n" +
-                "☼  $                         ☼\n" +
-                "☼                            ☼\n" +
-                "☼                            ☼\n" +
-                "☼              $             ☼\n" +
-                "☼        $                   ☼\n" +
-                "☼                            ☼\n" +
-                "☼                            ☼\n" +
-                "☼ $                         $☼\n" +
-                "☼                            ☼\n" +
-                "☼              $             ☼\n" +
-                "☼                            ☼\n" +
-                "☼    $                       ☼\n" +
-                "☼                            ☼\n" +
-                "☼                       $    ☼\n" +
-                "☼                            ☼\n" +
-                "☼                            ☼\n" +
-                "☼                            ☼\n" +
-                "☼            $               ☼\n" +
-                "☼                            ☼\n" +
-                "☼                            ☼\n" +
-                "☼       $                $   ☼\n" +
-                "☼                            ☼\n" +
-                "☼       ☺        $           ☼\n" +
-                "☼                            ☼\n" +
-                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+        Levels.setup(this);
     }
 
-    public Level level() {
-        return new LevelImpl(string(LEVEL_MAP));
+    public Level level(int level, Dice dice) {
+        return new Level(getRandomLevelMap(level, dice));
     }
-
 }

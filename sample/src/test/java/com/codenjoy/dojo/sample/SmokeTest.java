@@ -24,35 +24,40 @@ package com.codenjoy.dojo.sample;
 
 
 import com.codenjoy.dojo.client.Solver;
-import com.codenjoy.dojo.client.local.LocalGameRunner;
-import com.codenjoy.dojo.sample.client.Board;
-import com.codenjoy.dojo.sample.client.ai.AISolver;
+import com.codenjoy.dojo.games.sample.Board;
 import com.codenjoy.dojo.sample.services.GameRunner;
 import com.codenjoy.dojo.sample.services.GameSettings;
+import com.codenjoy.dojo.sample.services.ai.AISolver;
 import com.codenjoy.dojo.services.Dice;
+import com.codenjoy.dojo.services.multiplayer.LevelProgress;
 import com.codenjoy.dojo.utils.Smoke;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.function.Supplier;
-import java.util.stream.Stream;
-
-import static com.codenjoy.dojo.sample.services.GameSettings.Keys.LEVEL_MAP;
-import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
 
 public class SmokeTest {
 
+    private Smoke smoke;
+    private Dice dice;
+    private Supplier<Solver> solver;
+
+    @Before
+    public void setup() {
+        smoke = new Smoke();
+        dice = smoke.dice();
+        solver = () -> new AISolver(dice);
+    }
+
     @Test
     public void test() {
-        Dice dice = LocalGameRunner.getDice("435874345435874365843564398", 100, 200);
-
         // about 2.2 sec
         int players = 2;
         int ticks = 1000;
-        Supplier<Solver> solver = () -> new AISolver(dice);
 
-        LocalGameRunner.showPlayers = "1";
-        Smoke.play(ticks, "SmokeTest.data",
+        smoke.settings().showPlayers("1");
+
+        smoke.play(ticks, "SmokeTest.data",
                 new GameRunner() {
                     @Override
                     public Dice getDice() {
@@ -61,8 +66,10 @@ public class SmokeTest {
 
                     @Override
                     public GameSettings getSettings() {
-                        return super.getSettings()
-                                .string(LEVEL_MAP,
+                        int level = LevelProgress.levelsStartsFrom1;
+                        return new TestGameSettings()
+                                .clearLevelMaps(level)
+                                .setLevelMap(level,
                                         "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
                                         "☼            $     ☼\n" +
                                         "☼        $         ☼\n" +
@@ -85,10 +92,6 @@ public class SmokeTest {
                                         "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
                     }
                 },
-                Stream.generate(solver)
-                        .limit(players).collect(toList()),
-                Stream.generate(() -> new Board())
-                        .limit(players).collect(toList()),
-                (o1, o2) -> assertEquals(o1, o2));
+                players, solver, Board::new);
     }
 }

@@ -24,45 +24,42 @@ package com.codenjoy.dojo.sample.model;
 
 
 import com.codenjoy.dojo.sample.services.GameSettings;
+import com.codenjoy.dojo.sample.services.Scores;
 import com.codenjoy.dojo.services.EventListener;
 import com.codenjoy.dojo.services.Point;
-import com.codenjoy.dojo.services.multiplayer.GamePlayer;
-
-import java.util.Optional;
+import com.codenjoy.dojo.services.round.RoundGamePlayer;
 
 /**
- * Класс игрока. Тут кроме героя может подсчитываться очки.
- * Тут же ивенты передабтся лиснеру фреймворка.
+ * Класс игрока, инкапсулирующий в себе героя {@link #getHero()},
+ * поле {@link #field} на котором играем, настройки игры {@link #settings}
+ * и самое главное слушатель (со стороны фреймворка) событий игры для этого
+ * игрока {@link #listener}.
  */
-public class Player extends GamePlayer<Hero, Field> {
-
-    Hero hero;
+public class Player extends RoundGamePlayer<Hero, Field> {
 
     public Player(EventListener listener, GameSettings settings) {
         super(listener, settings);
     }
 
-    public Hero getHero() {
-        return hero;
+    @Override
+    public void start(int round, Object startEvent) {
+        super.start(round, startEvent);
+        hero.clearScores();
     }
 
     @Override
-    public void newHero(Field field) {
-        if (hero != null) {
-            hero = null;
-        }
-        Optional<Point> pt = field.freeRandom();
-        if (pt.isEmpty()) {
-            // TODO вот тут надо как-то сообщить плееру, борде и самому серверу, что нет место для героя
-            throw new RuntimeException("Not enough space for Hero");
-        }
-        hero = new Hero(pt.get());
-        hero.init(field);
+    public void event(Object event) {
+        getHero().addScore(Scores.scoreFor(settings(), event));
+        super.event(event);
     }
 
     @Override
-    public boolean isAlive() {
-        return hero != null && hero.isAlive();
+    public Hero createHero(Point pt) {
+        return new Hero(pt);
+    }
+
+    private GameSettings settings() {
+        return (GameSettings) settings;
     }
 
 }

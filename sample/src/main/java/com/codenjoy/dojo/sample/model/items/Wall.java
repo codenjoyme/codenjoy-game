@@ -23,23 +23,27 @@ package com.codenjoy.dojo.sample.model.items;
  */
 
 
-import com.codenjoy.dojo.sample.model.Elements;
+import com.codenjoy.dojo.games.sample.Element;
 import com.codenjoy.dojo.sample.model.Player;
 import com.codenjoy.dojo.services.Point;
 import com.codenjoy.dojo.services.PointImpl;
 import com.codenjoy.dojo.services.State;
 
 /**
- * Артефакт: Стена на поле
+ * Артефакт - стена на поле.
+ *
+ * Если артефакт пассивный, то он умеет только рисовать себя, но
+ * встречаются и более активные артефакты, тогда тут может быть размещена их логика.
+ * Яркий тому пример {@link com.codenjoy.dojo.sample.model.Hero}.
  */
-public class Wall extends PointImpl implements State<Elements, Player> {
+public class Wall extends PointImpl implements State<Element, Player> {
 
     public Wall(Point point) {
         super(point);
     }
 
     @Override
-    public Elements state(Player player, Object... alsoAtPoint) {
-        return Elements.WALL;
+    public Element state(Player player, Object... alsoAtPoint) {
+        return Element.WALL;
     }
 }
